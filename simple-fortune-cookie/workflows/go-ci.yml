@@ -1,0 +1,66 @@
+name: GO-CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  Clone-down:
+    name: Clone repo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+  Test:
+    runs-on: ubuntu-latest
+    needs: Clone-down
+    container: golang:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Test app
+        run: cd frontend && go test
+  Build-frontend:
+    runs-on: ubuntu-latest
+    needs: Clone-down
+    container: golang:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build app
+        run: cd frontend && go build
+  Build-backend:
+    runs-on: ubuntu-latest
+    needs: Clone-down
+    container: golang:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build app
+        run: cd backend && go build
+  Push-docker-image:
+    runs-on: ubuntu-latest
+    needs: [Test, Build-frontend, Build-backend]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Login to dockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Build frontend and push
+      uses: docker/build-push-action@v2
+      with:
+        context: ./frontend
+        push: true
+        tags: ansor18/fortune-cookie-frontend:latest
+    - name: Build backend and push
+      uses: docker/build-push-action@v2
+      with:
+        context: ./backend
+        push: true
+        tags: ansor18/fortune-cookie-backend:latest
+      
